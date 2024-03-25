@@ -1,0 +1,990 @@
+//SYSTEM
+
+randomize();
+//Randomize initial RNG Seed
+
+draw_set_color(c_white);
+//White text
+
+key_pressed = false;
+
+//MODES
+
+game_room = "title";
+//rooms: title, char_select, game, game_over, demo_over
+
+char_select_mode = "borf";
+//modes: borf, daisy
+
+game_mode = "title";
+//modes: title, char_setup, start, menu_setup, menu, doors, status, inventory, armory, options, options_main
+//modes: walking, doors, event_setup, event, battle_setup, battle, victory, defeat, 
+
+battle_menu_mode = "none"
+//modes: none, actions, inventory, text
+
+event_mode = "start"
+//modes: start, script, end
+
+victory_mode = "prize";
+//modes: prize, reset
+
+text_mode = "none"
+//modes: none, top_text, bottom_text, both, choice, 3_choice, 4_choice
+
+dungeon_floor = 1; 
+dungeon_room = 0;
+dungeon_door = 1; //1-3 left to right
+demo_item_pot = (dungeon_floor * dungeon_floor) + dungeon_floor;
+
+//ITEMS
+
+gold = 0;
+
+empty_item = {
+	name: "EMPTY",
+	type: "none",
+	text: "",
+	use_script: scr_potion_heal,
+	sprite: spr_item_empty,
+}
+
+empty_equip = {
+	name: "EMPTY",
+	type: "none",
+	pot: 0,
+	sprite: spr_item_empty,
+}
+
+food_cookie = {
+	name: "COOKIE",
+	type: "item",
+	text: "Cookie",
+	use_script: scr_food_cookie,
+	sprite: spr_item_food,
+}
+
+food_bread = {
+	name: "BREAD",
+	type: "item",
+	text: "Bread",
+	use_script: scr_food_bread,
+	sprite: spr_item_food,
+}
+
+food_burger = {
+	name: "BASIC BURGER",
+	type: "item",
+	text: "Just a hamburger, a bun, and some drippy ketchup",
+	use_script: scr_food_burger,
+	sprite: spr_item_food,
+}
+
+food_pizza = {
+	name: "PIZZA",
+	type: "item",
+	text: "Pizza",
+	use_script: scr_food_pizza,
+	sprite: spr_item_food,
+}
+
+potion_heal = {
+	name: "HEALTH POTION",
+	type: "item",
+	text: "A potion which restores around 10 HP",
+	use_script: scr_potion_heal,
+	sprite: spr_item_potion,
+}
+
+potion_ap = {
+	name: "ENERGY POTION",
+	type: "item",
+	text: "A potion which instantly gives 3 AP",
+	use_script: scr_potion_ap,
+	sprite: spr_item_potion,
+}
+
+potion_calm = {
+	name: "CALMING POTION",
+	type: "item",
+	text: "A potion which drains all AP to restore a proportional amount of HP.",
+	use_script: scr_potion_calm,
+	sprite: spr_item_potion,
+}
+
+potion_heal_all = {
+	name: "HEAL ALL POTION",
+	type: "party_item",
+	text: "A potion which restores around 6 HP to each party memeber.",
+	use_script: scr_potion_heal_all,
+	sprite: spr_item_potion,
+}
+
+//Weapons
+no_weapon = {
+	name: "EMPTY",
+	type: "all",
+	pot: 0,
+	sprite: spr_item_empty,
+}
+
+axe_demo = {
+	name: "DEMO AXE",
+	type: "axe",
+	pot: demo_item_pot,
+	sprite: spr_item_weapon,
+}
+
+axe_borfs = {
+	name: "BORF'S AXE",
+	type: "axe",
+	pot: 2,
+	sprite: spr_item_weapon,
+}
+
+//Armor
+no_armor = {
+	name: "EMPTY",
+	type: "armor",
+	pot: 0,
+	sprite: spr_item_empty,
+}
+
+armor_demo = {
+	name: "DEMO ARMOR",
+	type: "armor",
+	pot: demo_item_pot,
+	sprite: spr_item_armor,
+}
+
+armor_plaid = {
+	name: "PLAID SHIRT",
+	type: "armor",
+	pot: 2,
+	sprite: spr_item_armor,
+}
+
+//Accessories
+no_acc = {
+	name: "EMPTY",
+	type: "acc",
+	pot: 0,
+	buffs: [0, 0, 0, 0, 0, 0, 0],
+	//[hp_max, str, def, spd, eva, int, wis]
+	sprite: spr_item_empty,
+}
+
+//ACTIONS
+
+empty_action = {
+	name: "",
+	cost: 0,
+	text: "",
+	use_script: scr_do_nothing,
+}
+
+//Borf
+clear_cut = {
+	name: "CLEAR CUT",
+	cost: 1,
+	text: "BORF spins around wildly with his axe. Hits twice.",
+	use_script: scr_borf_clear_cut,
+}
+
+lumber_support = {
+	name: "LUMBER SUPPORT",
+	cost: 2,
+	text: "A lumberjack ritual, increases ATK and DEF.",
+	use_script: scr_borf_lumber_support,
+}
+
+call_ratatoskr = {
+	name: "CALL RATATOSKR",
+	cost: 5,
+	text: "-NOT FUNCTIONAL YET-",
+	//text: "Summons your pet squirrel for random assistance.",
+	use_script: scr_borf_ratatoskr,
+}
+
+//Daisy
+factor_4 = {
+	name: "FACTOR_4",
+	cost: 2,
+	text: "A beam dealing exponential damage to the target.",
+	use_script: scr_daisy_factor_4,
+}
+
+regen_exe = {
+	name: "REGEN.EXE",
+	cost: 4,
+	text: "DAISY activates her self-repair subroutine.",
+	use_script: scr_daisy_regen_exe,
+}
+
+degauss = {
+	name: "DEGAUSS",
+	cost: 5,
+	text: "Discharge all AP to deal heavy electric damage.",
+	use_script: scr_daisy_degauss,
+}
+
+//CHARACTERS
+
+char1 = {
+	name: "",
+	types: ["axe"],
+	hp: 0,
+	hp_max: 0,
+	ap: 0,
+	str: 1,
+	def: 1,
+	spd: 1,
+	eva: 1,
+	int: 1,
+	wis: 1,
+	temp_stat_buffs: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
+	//[hp_max, str, def, spd, eva, int, wis]
+	//[buff value, duration remaining]
+	status_effects: [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]],
+	//[poisened, blind, paralyzed, confused, asleep, regen, custom buff 1, custom buff 2]
+	physical_def: [1, 1, 1, 1],
+	//[slash, hit, pierce, dark]
+	elemental_def: [1, 1, 1, 1, 1, 1],
+	//[fire, ice, bolt, stone, water, air]
+	init: 9,
+	init_test: 0,
+	damage_timer: 0,
+	weapon: no_weapon,
+	armor: no_armor,
+	acc: no_acc,
+	actions: [],
+	portrait: spr_portraits_empty,
+	sprites: [spr_player_borf_up, spr_player_borf_right, spr_player_borf_down, spr_player_borf_left, spr_player_borf_walking_up, spr_player_borf_walking_down, spr_player_borf_damage]
+};
+
+char2 = {
+	name: "",
+	types: ["axe"],
+	hp: 0,
+	hp_max: 0,
+	ap: 0,
+	str: 1,
+	def: 1,
+	spd: 1,
+	eva: 1,
+	int: 1,
+	wis: 1,
+	temp_stat_buffs: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
+	//[hp_max, str, def, spd, eva, int, wis]
+	//[buff value, duration remaining]
+	status_effects: [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]],
+	//[poisened, blind, paralyzed, confused, asleep, regen, custom buff 1, custom buff 2]
+	physical_def: [1, 1, 1, 1],
+	//[slash, hit, pierce, dark]
+	elemental_def: [1, 1, 1, 1, 1, 1],
+	//[fire, ice, bolt, stone, water, air]
+	init: 9,
+	init_test: 0,
+	damage_timer: 0,
+	weapon: no_weapon,
+	armor: no_armor,
+	acc: no_acc,
+	actions: [],
+	portrait: spr_portraits_empty,
+	sprites: [spr_player_borf_up, spr_player_borf_right, spr_player_borf_down, spr_player_borf_left, spr_player_borf_walking_up, spr_player_borf_walking_down, spr_player_borf_damage]
+}
+
+char3 = {
+	name: "",
+	types: ["axe"],
+	hp: 0,
+	hp_max: 0,
+	ap: 0,
+	str: 1,
+	def: 1,
+	spd: 1,
+	eva: 1,
+	int: 1,
+	wis: 1,
+	temp_stat_buffs: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
+	//[hp_max, str, def, spd, eva, int, wis]
+	//[buff value, duration remaining]
+	status_effects: [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]],
+	//[poisened, blind, paralyzed, confused, asleep, regen, custom buff 1, custom buff 2]
+	physical_def: [1, 1, 1, 1],
+	//[slash, hit, pierce, dark]
+	elemental_def: [1, 1, 1, 1, 1, 1],
+	//[fire, ice, bolt, stone, water, air]
+	init: 9,
+	init_test: 0,
+	damage_timer: 0,
+	weapon: no_weapon,
+	armor: no_armor,
+	acc: no_acc,
+	actions: [],
+	portrait: spr_portraits_empty,
+	sprites: [spr_player_borf_up, spr_player_borf_right, spr_player_borf_down, spr_player_borf_left, spr_player_borf_walking_up, spr_player_borf_walking_down, spr_player_borf_damage]
+}
+
+char4 = {
+	name: "",
+	types: ["axe"],
+	hp: 0,
+	hp_max: 0,
+	ap: 0,
+	str: 1,
+	def: 1,
+	spd: 1,
+	eva: 1,
+	int: 1,
+	wis: 1,
+	temp_stat_buffs: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
+	//[hp_max, str, def, spd, eva, int, wis]
+	//[buff value, duration remaining]
+	status_effects: [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]],
+	//[poisened, blind, paralyzed, confused, asleep, regen, custom buff 1, custom buff 2]
+	physical_def: [1, 1, 1, 1],
+	//[slash, hit, pierce, dark]
+	elemental_def: [1, 1, 1, 1, 1, 1],
+	//[fire, ice, bolt, stone, water, air]
+	init: 9,
+	init_test: 0,
+	damage_timer: 0,
+	weapon: no_weapon,
+	armor: no_armor,
+	acc: no_acc,
+	actions: [],
+	portrait: spr_portraits_empty,
+	sprites: [spr_player_borf_up, spr_player_borf_right, spr_player_borf_down, spr_player_borf_left, spr_player_borf_walking_up, spr_player_borf_walking_down, spr_player_borf_damage]
+}
+
+borf = {
+	name: "BORF",
+	types: ["axe"],
+	hp: 20,
+	hp_max: 20,
+	str: 5,
+	def: 4,
+	spd: 2,
+	eva: 3,
+	int: 4,
+	wis: 5,
+	init: 4,
+	weapon: axe_demo,
+	armor: armor_demo,
+	acc: no_acc,
+	actions: [clear_cut, lumber_support, call_ratatoskr],
+	portrait: spr_portraits_borf,
+	sprites: [spr_player_borf_up, spr_player_borf_right, spr_player_borf_down, spr_player_borf_left, spr_player_borf_walking_up, spr_player_borf_walking_down, spr_player_borf_damage]
+};
+
+daisy = {
+	name: "DAISY",
+	types: ["axe"],
+	hp: 20,
+	hp_max: 20,
+	str: 4,
+	def: 5,
+	spd: 3,
+	eva: 2,
+	int: 7,
+	wis: 2,
+	init: 7,
+	weapon: axe_demo,
+	armor: armor_demo,
+	acc: no_acc,
+	actions: [factor_4, regen_exe, degauss],
+	portrait: spr_portraits_empty,
+	sprites: [spr_player_daisy_up, spr_player_daisy_down, spr_player_daisy_down, spr_player_daisy_down, spr_player_daisy_walking_up, spr_player_daisy_walking_down, spr_player_daisy_damage]
+}
+
+magpie = {
+	name: "MAGPIE",
+	types: ["axe"],
+	hp: 15,
+	hp_max: 15,
+	str: 3,
+	def: 3,
+	spd: 6,
+	eva: 4,
+	int: 5,
+	wis: 4,
+	init: 6,
+	weapon: axe_demo,
+	armor: armor_demo,
+	acc: no_acc,
+	actions: [empty_action, empty_action, empty_action],
+	portrait: spr_portraits_empty,
+	sprites: [spr_player_magpie_up, spr_player_magpie_right, spr_player_magpie_down, spr_player_magpie_left, spr_player_magpie_walking_up, spr_player_magpie_walking_down, spr_player_magpie_damage]
+}
+
+puck = {
+	name: "PUCK",
+	types: ["axe"],
+	hp: 30,
+	hp_max: 30,
+	str: 6,
+	def: 4,
+	spd: 5,
+	eva: 2,
+	int: 4,
+	wis: 3,
+	init: 6,
+	weapon: axe_demo,
+	armor: armor_demo,
+	acc: no_acc,
+	actions: [empty_action, empty_action, empty_action],
+	portrait: spr_portraits_empty,
+	sprites: [spr_player_puck_up, spr_player_puck_down, spr_player_puck_down, spr_player_puck_down, spr_player_puck_walking_up, spr_player_puck_walking_down, spr_player_puck_damage]
+}
+
+gramps = {
+	name: "GRAMPS",
+	types: ["axe"],
+	hp: 12,
+	hp_max: 14,
+	str: 2,
+	def: 3,
+	spd: 2,
+	eva: 3,
+	int: 6,
+	wis: 6,
+	init: 7,
+	weapon: axe_demo,
+	armor: armor_demo,
+	acc: no_acc,
+	actions: [empty_action, empty_action, empty_action],
+	portrait: spr_portraits_empty,
+	sprites: [spr_player_gramps_up, spr_player_gramps_right, spr_player_gramps_down, spr_player_gramps_left, spr_player_gramps_walking_up, spr_player_gramps_walking_down, spr_player_gramps_damage]
+}
+
+uno = {
+	name: "UNO",
+	types: ["axe"],
+	hp: 35,
+	hp_max: 35,
+	str: 5,
+	def: 5,
+	spd: 5,
+	eva: 4,
+	int: 2,
+	wis: 3,
+	init: 7,
+	weapon: axe_demo,
+	armor: armor_demo,
+	acc: no_acc,
+	actions: [empty_action, empty_action, empty_action],
+	portrait: spr_portraits_empty,
+	sprites: [spr_player_uno_up, spr_player_uno_right, spr_player_uno_down, spr_player_uno_left, spr_player_uno_walking_up, spr_player_uno_walking_down, spr_player_uno_damage]
+}
+
+temp_actor = char1;
+temp_target = char1;
+temp_action = scr_monster_attack;
+//Used for targeting
+
+//MONSTERS
+
+no_monster_set = {
+	name: "ERROR",
+	hp: 0,
+	hp_max: 0,
+	str: 0,
+	def: 0,
+	spd: 0,
+	eva: 0,
+	int: 0,
+	wis: 0,
+	init: 0,
+	actions: [],
+	sprite: spr_no_monster,
+};
+
+//--Floor 1
+playin_possum = {
+	name: "PLAYIN' POSSUM",
+	hp: 4,
+	hp_max: 4,
+	str: 8,
+	def: 4,
+	spd: 1,
+	eva: 2,
+	int: 0,
+	wis: 4,
+	init: 7,
+	actions: [scr_monster_attack],
+	gold: 1,
+	item: food_cookie,
+	sprite: spr_possum,
+};
+
+innocent_clucko = {
+	name: "INNOCENT CLUCKO",
+	hp: 2,
+	hp_max: 2,
+	str: 8,
+	def: 4,
+	spd: 1,
+	eva: 2,
+	int: 0,
+	wis: 4,
+	init: 7,
+	actions: [scr_monster_attack],
+	gold: 1,
+	item: food_cookie,
+	sprite: spr_chicken,
+};
+
+common_capybara = {
+	name: "COMMON CAPYBARA",
+	hp: 8,
+	hp_max: 8,
+	str: 8,
+	def: 4,
+	spd: 3,
+	eva: 2,
+	int: 0,
+	wis: 2,
+	init: 5,
+	actions: [scr_monster_attack],
+	gold: 5,
+	item: empty_item,
+	sprite: spr_capybara,
+};
+
+creepy_cat_keeper = {
+	name: "CREEPY CAT-KEEPER",
+	hp: 10,
+	hp_max: 10,
+	str: 2,
+	def: 3,
+	spd: 7,
+	eva: 3,
+	int: 1,
+	wis: 5,
+	init: 8,
+	actions: [scr_monster_attack],
+	gold: 5,
+	item: food_bread,
+	sprite: spr_keeper,
+};
+
+red_nose_ruffian = {
+	name: "RED-NOSE RUFFIAN", //or REVELER
+	hp: 12,
+	hp_max: 12,
+	str: 3,
+	def: 3,
+	spd: 7,
+	eva: 1,
+	int: 3,
+	wis: 4,
+	init: 8,
+	actions: [scr_monster_attack],
+	gold: 5,
+	item: food_burger,
+	sprite: spr_ruffian,
+};
+
+munkomancer = {
+	name: "MUNKOMANCER",
+	hp: 6,
+	hp_max: 6,
+	str: 9,
+	def: 4,
+	spd: 8,
+	eva: 4,
+	int: 5,
+	wis: 5,
+	init: 6,
+	actions: [scr_monster_attack],
+	gold: 3,
+	item: potion_ap,
+	sprite: spr_monkey,
+};
+
+//--Floor 2
+lime_slime = {
+	name: "LIME SLIME",
+	hp: 12,
+	hp_max: 12,
+	str: 8,
+	def: 6,
+	spd: 1,
+	eva: 0,
+	int: 3,
+	wis: 4,
+	init: 9,
+	actions: [scr_monster_attack],
+	gold: 4,
+	item: potion_calm,
+	sprite: spr_slime,
+};
+
+bombastic_bat = {
+	name: "BOMBASTIC BAT",
+	hp: 8,
+	hp_max: 12,
+	str: 5,
+	def: 4,
+	spd: 12,
+	eva: 6,
+	int: 5,
+	wis: 6,
+	init: 2,
+	actions: [scr_monster_attack],
+	gold: 1,
+	item: empty_item,
+	sprite: spr_bat,
+};
+
+capybara_commando = {
+	name: "CAPYBARA COMMANDO",
+	hp: 14,
+	hp_max: 14,
+	str: 11,
+	def: 7,
+	spd: 6,
+	eva: 2,
+	int: 0,
+	wis: 4,
+	init: 4,
+	actions: [scr_monster_attack],
+	gold: 5,
+	item: empty_item,
+	sprite: spr_capybara_2,
+};
+
+fly_guy = {
+	name: "FLY GUY",
+	hp: 10,
+	hp_max: 10,
+	str: 9,
+	def: 6,
+	spd: 11,
+	eva: 4,
+	int: 6,
+	wis: 3,
+	init: 5,
+	actions: [scr_monster_attack],
+	gold: 2,
+	item: food_burger,
+	sprite: spr_fly,
+};
+
+//--Other
+creepy_crawler = {
+	name: "CREEPY CRAWLER",
+	hp: 8,
+	hp_max: 8,
+	str: 9,
+	def: 4,
+	spd: 3,
+	eva: 2,
+	int: 0,
+	wis: 2,
+	init: 5,
+	actions: [scr_monster_attack],
+	gold: 5,
+	item: food_burger,
+	sprite: spr_crawler,
+};
+
+//BOSSES
+
+wormapple = {
+	name: "WORMAPPLE",
+	hp: 20,
+	hp_max: 20,
+	str: 4,
+	def: 4,
+	spd: 4,
+	eva: 4,
+	int: 4,
+	wis: 4,
+	init: 2,
+	actions: [scr_monster_attack],
+	gold: 10,
+	item: food_pizza,
+	sprite: spr_wormapple,
+};
+
+nostalgic_nerd = {
+	name: "NOSTALGIC NERD",
+	hp: 20,
+	hp_max: 20,
+	str: 4,
+	def: 4,
+	spd: 4,
+	eva: 4,
+	int: 4,
+	wis: 4,
+	init: 2,
+	actions: [scr_monster_attack],
+	gold: 10,
+	item: food_pizza,
+	sprite: spr_nerd,
+};
+
+manlizard = {
+	name: "MAN-LIZARD",
+	hp: 20,
+	hp_max: 20,
+	str: 4,
+	def: 8,
+	spd: 4,
+	eva: 4,
+	int: 4,
+	wis: 4,
+	init: 2,
+	actions: [scr_monster_attack],
+	gold: 20,
+	item: food_pizza,
+	sprite: spr_manlizard,
+};
+
+unicorn = {
+	name: "UNICORN",
+	hp: 20,
+	hp_max: 20,
+	str: 4,
+	def: 8,
+	spd: 4,
+	eva: 4,
+	int: 4,
+	wis: 4,
+	init: 2,
+	actions: [scr_monster_attack],
+	gold: 20,
+	item: food_pizza,
+	sprite: spr_unicorn,
+};
+
+apocalos_tortoise = {
+	name: "APOCALOS TORTOISE",
+	hp: 20,
+	hp_max: 20,
+	str: 4,
+	def: 4,
+	spd: 4,
+	eva: 4,
+	int: 4,
+	wis: 4,
+	init: 2,
+	actions: [scr_monster_attack],
+	gold: 5,
+	item: food_burger,
+	sprite: spr_tortoise,
+};
+
+
+//EVENTS
+
+no_event_set = {
+	name: "ERROR",
+	text: ["What?"],
+	gold: 5,
+	item: potion_calm,
+	sprite: spr_no_event,
+	use_script: scr_event_fountain,
+};
+
+fountain = {
+	name: "FOUNTAIN",
+	text: ["You see a fountain.", "The water looks cool and clear", "Would you like to take a drink?"],
+	gold: 5,
+	item: potion_heal_all,
+	sprite: spr_fountain,
+	use_script: scr_event_fountain,
+};
+
+bar = {
+	name: "BAR",
+	text: ["A dirt road leads to a shady bar on the edge of town.", "Will you go inside?"],
+	gold: 10,
+	item: potion_calm,
+	sprite: spr_bar_night,
+	use_script: scr_event_bar,
+};
+
+shrine = {
+	name: "SHRINE",
+	text: ["There's a humble shrine here, in rememberance of the old gods.", "Will you leave 5g as an offering?"],
+	gold: 0,
+	item: empty_item,
+	sprite: spr_shrine,
+	use_script: scr_event_shrine,
+};
+
+pit = {
+	name: "PIT",
+	text: ["You fall down a pit...", "You keep falling...", "THUD!"],
+	gold: 0,
+	item: empty_item,
+	sprite: spr_pit,
+	use_script: scr_event_pit,
+};
+
+//TITLE
+
+title_timer = 180;
+//time before prompt
+
+//CHAR SELECT
+
+controls_set = false;
+
+//SETUP
+
+char_set = false;
+//Checks if initial char setup is complete
+
+char_list = [puck, gramps, uno];
+char1_to_be = borf;
+char2_to_be = char_list[floor(random(array_length(char_list)))];
+char3_to_be = char_list[floor(random(array_length(char_list)))];
+char4_to_be = char_list[floor(random(array_length(char_list)))];
+
+char_targets = [char1]
+//Initial list of targetable chars
+
+char_target_index = 0;
+//Index of char_target which is targeted
+
+inventory = [empty_item, empty_item, empty_item, empty_item, potion_ap, potion_ap, potion_calm];
+//Main inventory
+
+armory = [axe_demo, armor_demo, empty_equip, empty_equip, empty_equip, empty_equip, empty_equip]
+//Main armory
+
+inv_cursor_pos = 0;
+inv_cursor_temp = 0;
+inv_targeting = false;
+inv_target_pos = 0;
+inv_target = char_targets[inv_target_pos]
+//Inventory cursor targeting
+
+//COLORS
+
+bg_c_blue = #4A4FEF;
+
+wall_colors = [c_red, c_yellow, c_lime, c_aqua, c_fuchsia];
+wall_color = bg_c_blue
+wall_colored = wall_color
+//Wall/door color customization
+//base colors: c_red, c_orange, c_yellow, c_lime, c_green, c_aqua, c_teal, c_blue, c_purple, c_fuchsia
+
+//TEXT
+
+top_text = "TOP TEXT";
+bottom_text = "BOTTOM TEXT";
+choice_text = "What do you choose?";
+choice_choices = "\nA - YES\nB - NO ";
+choice_cursor_pos = 1;
+//6 lines max, 37s char max per line
+
+//EXPLORE
+
+formation = "free"; //??
+walking = false;
+walk_timer = 0;
+
+//DOORS
+
+door_cursor_pos = 1;
+temp_door_choice = 1;
+temp_prize = "gold";
+door_reset = true;
+visited_rooms = [];
+
+//MENU
+
+menu_diff = 0;
+//Difference in battle_box.y during battle 
+menu_timer = 0;
+menu_text = "";
+menu_mode = "walk";
+//modes: walk, status, inventory, armory, save
+
+selected_status_char = char1;
+options_cursor = "audio";
+
+//EVENT
+
+event_list = [fountain, bar, shrine, pit];
+event_set = false;
+event = {
+	event_event: no_event_set,
+	name: "",
+	text: "",
+	text_line: 0,
+	custom_vars: [0, 0, 0],
+	sprite: spr_no_event,
+}
+
+//BATTLE
+
+battle_mode_saved = "";
+battle_text_buffer = [];
+battle_text_followup_script = scr_do_nothing;
+
+flying_text_value_1 = 0;
+flying_text_value_2 = 0;
+flying_text_value_3 = 0;
+flying_text_value_4 = 0;
+flying_text_value_enemy = 0;
+
+monster_list = [[playin_possum, innocent_clucko, common_capybara, creepy_cat_keeper, red_nose_ruffian, munkomancer], [bombastic_bat, lime_slime, fly_guy, capybara_commando], [playin_possum, common_capybara, munkomancer], [bombastic_bat, lime_slime, fly_guy], [playin_possum, common_capybara, munkomancer]];
+boss_list = [[wormapple, nostalgic_nerd], [manlizard, unicorn], [wormapple, nostalgic_nerd], [manlizard, unicorn], [wormapple, nostalgic_nerd]];
+unused_monster_list = [creepy_crawler, apocalos_tortoise];
+
+add_char = false; //??
+add_char_text = false; //??
+
+monster_set = false;
+monster = {
+	monster_type: no_monster_set,
+	name: "",
+	hp: 0,
+	hp_max: 0,
+	init: 0,
+	temp_stat_buffs: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]],
+	//[hp_max, str, def, spd, eva, int, wis]
+	//[buff value, duration remaining]
+	status_effects: [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]],
+	//[poisened, blind, paralyzed, confused, asleep, regen, custom buff 1, custom buff 2]
+	gold: 5,
+	item: food_burger,
+	sprite: spr_no_monster,
+	init_test: 0,
+}
+
+init_test_set = false;
+
+turn_order = [];
+turn_order_set = false;
+turn = "none";
+between_turn_timer = 0;
+//modes: none, player, monster
+
+battle_button = "atk";
+battle_box_actions_cursor = 0;
+
+//VICTORY
+
+prize_list = ["gold", "gold", "heal", "heal", "item"]
+prize_given = false;
+victory_text = "WELCOME TO SAVE POINT";
+
+//GAME OVER
+
+game_over_cursor_pos = "title";
+
+//DEMO OVER
+
+end_room = false;
+
+//OTHER
+
+test_mode = true;
+room_goto(rm_title);
