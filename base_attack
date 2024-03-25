@@ -1,0 +1,76 @@
+function scr_base_attack(_actor, _target) {
+	var _damage = 0;
+	if _actor.str >= _actor.spd {
+		_damage = (_actor.str + _actor.weapon.pot + _actor.temp_stat_buffs[1][0]) - _target.def;
+	} else if _actor.spd > _actor.str {
+		_damage = (_actor.spd + _actor.weapon.pot + _actor.temp_stat_buffs[3][0]) - _target.def;
+	}
+	
+	if _damage < 0 {
+		_damage = 0;
+	}
+	
+	if _damage > 0 {
+		if _actor.status_effects[1] == 1 {
+			var _blind_hit_chance = floor(random(2));
+			if _blind_hit_chance == 0 {
+				scr_flying_text(_target, "MISS");
+			} else {
+				if _target.hp > _damage {
+					_target.hp -= _damage;
+					obj_attack.sprite_index = spr_attack_slash;
+					obj_attack.image_speed = 1;
+					scr_flying_text(_target, _damage);
+					scr_add_ap(_actor);
+				
+				} else {
+					_damage = _target.hp;
+					_target.hp -= _damage;
+					//obj_attack.sprite_index = spr_attack_slash;
+					//obj_attack.image_speed = 1;
+					//scr_flying_text(_target, _damage);
+					scr_add_ap(_actor);			
+				}
+			}
+		} else {
+			var _crit_chance = random(10);
+			if _crit_chance <= (_target.eva / 2) {
+				scr_flying_text(_target, "MISS");
+			} else if _crit_chance >= 9 {
+				if _target.hp > (_damage * 2) {
+					_target.hp -= (_damage * 2);
+					obj_attack.sprite_index = spr_attack_slash;
+					obj_attack.image_speed = 1;
+					scr_flying_text(_target, _damage);
+					scr_add_ap(_actor);
+				
+				} else {
+					_damage = _target.hp;
+					_target.hp -= _damage;
+					//obj_attack.sprite_index = spr_attack_slash;
+					//obj_attack.image_speed = 1;
+					//scr_flying_text(_target, _damage);
+					scr_add_ap(_actor);
+				}
+			} else {
+				if _target.hp > _damage {
+					_target.hp -= _damage;
+					obj_attack.sprite_index = spr_attack_slash;
+					obj_attack.image_speed = 1;
+					scr_flying_text(_target, _damage);
+					scr_add_ap(_actor);
+				
+				} else {
+					_damage = _target.hp;
+					_target.hp -= _damage;
+					//obj_attack.sprite_index = spr_attack_slash;
+					//obj_attack.image_speed = 1;
+					//scr_flying_text(_target, _damage);
+					scr_add_ap(_actor);
+				}
+			}
+		}
+	} else {
+		scr_flying_text(_target, "BLOCK");
+	}
+}
