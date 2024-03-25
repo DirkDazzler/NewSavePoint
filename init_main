@@ -1,0 +1,1473 @@
+//----TESTING-----\\
+
+if test_mode {
+
+}
+
+//----TITLE SCREEN----\\
+
+if title_timer > 0 {
+	title_timer--	
+}
+
+if game_room == "title" {
+	if key_accept() {
+		audio_play_sound(snd_title_start, 90, false);
+		game_room = "char_select";
+		game_mode = "char_setup";
+		room_goto(rm_char_select)	
+	} else if key_cancel() {
+		scr_snd_cancel();
+		game_end()
+	}
+	
+//----CHARACTER SELECT----\\
+
+} else if game_room == "char_select" {
+	
+	if !audio_is_playing(snd_music_char_select) {
+		audio_play_sound(snd_music_char_select, 80, true);	
+	}
+	
+	if text_mode != "bottom_text" {
+		text_mode = "bottom_text";
+	}
+	
+	if !controls_set {
+		bottom_text = "SPACE: Select   ESC: Cancel\nARROW KEYS: Move cursor"
+		if key_accept() {
+			scr_snd_confirm();
+			controls_set = true;	
+		}
+	} else {
+		if char_select_mode == "borf" {
+			bottom_text = "Choose a character:\n-BORF, THE LUMBERJACK-\nYears ago, BORF's brother was kidnapped by one known only as the Dark Lord. Now BORF pursues this shadowy figure through the subterranean maze.";
+			if key_down() {
+				char_select_mode = "daisy";
+			} else if key_right() {
+				char_select_mode = "magpie";
+			} else if key_accept() {
+				scr_snd_confirm();
+				char1_to_be = borf;
+				game_room = "game";
+				text_mode = "none";
+				victory_text = "WELCOME TO SAVE POINT!";
+				if audio_is_playing(snd_music_char_select) {
+					audio_stop_sound(snd_music_char_select);	
+				}
+				room_goto(rm_game);
+			}
+			
+		} else if char_select_mode == "magpie" {
+			bottom_text = "Choose a character:\n-MAGPIE, THE PRIVATE EYE-\n\n\nComing soon!\n\n";
+			if key_up() {
+				char_select_mode = "borf";
+			} else if key_down() {
+				char_select_mode = "daisy";
+			} else if key_accept() {
+				scr_snd_cancel();
+			}
+			
+		} else if char_select_mode == "daisy" {
+			bottom_text = "Choose a character:\n-DAISY, THE ROBOT-\nOn a moonless night, DAISY crash-landed from outer space near the SAVE POINT. However, her right arm - and the comms device it held - landed elsewhere.";
+			if key_up() {
+				char_select_mode = "borf";
+			} else if key_right() {
+				char_select_mode = "magpie";
+			} else if key_accept() {
+				scr_snd_confirm();
+				char1_to_be = daisy;
+				game_room = "game";
+				text_mode = "none";
+				victory_text = "WELCOME TO SAVE POINT!";
+				if audio_is_playing(snd_music_char_select) {
+					audio_stop_sound(snd_music_char_select);	
+				}
+				room_goto(rm_game);
+			}
+		}
+	}
+	
+//----GAME SCENE----\\
+
+} else if game_room == "game" {
+	
+	//--UI--\\
+	if game_mode == "battle_setup" || game_mode == "boss_setup" || game_mode == "battle" {
+		if menu_diff < 108 {
+			menu_diff += 2;
+		}
+	} else {
+		if menu_diff > 0 {
+			menu_diff -= 2;
+		}
+	}
+
+	//--MODES--\\
+	
+	//CHAR SETUP
+	
+	if game_mode == "char_setup" {
+		
+		if !audio_is_playing(snd_music_main) {
+			audio_play_sound(snd_music_main, 80, true);	
+		}
+	
+		if !char_set {
+			scr_char_setup(char1, char1_to_be);
+			obj_char1.char1 = char1_to_be.sprites;
+			
+			if array_contains(char_targets, char2) {
+				scr_char_setup(char2, char2_to_be);
+				obj_char2.char2 = char2_to_be.sprites;
+			}
+			
+			if array_contains(char_targets, char3) {
+				scr_char_setup(char3, char3_to_be);
+				obj_char3.char3 = char3_to_be.sprites;
+			}
+
+			if array_contains(char_targets, char4) {
+				scr_char_setup(char4, char4_to_be);
+				obj_char4.char4 = char4_to_be.sprites;
+			}
+			
+			char_set = true;
+			game_mode = "start"
+		}
+		
+	//START
+	
+	} else if game_mode == "start" {
+		
+		if !audio_is_playing(snd_music_main) {
+			audio_play_sound(snd_music_main, 80, true);	
+		}
+		
+		if text_mode == "none" {
+			if key_accept() && !key_pressed {
+				key_pressed = true;
+				scr_snd_confirm();
+				top_text = "OBJECTIVE:\n\nDefeat the boss on floor 2!";
+				text_mode = "top_text";
+				victory_text = ""
+			} else if !key_accept() && key_pressed {
+				key_pressed = false;
+			}
+		} else {
+			if key_accept() && !key_pressed {
+				key_pressed = true;
+				scr_snd_confirm();
+				top_text = "";
+				text_mode = "none";
+				array_push(visited_rooms, "11");
+				walk_timer = 300;
+				dungeon_room += 1;
+				menu_timer = 10;
+				game_mode= "menu_setup"
+			} else if !key_accept() && key_pressed {
+				key_pressed = false;
+			}
+		}
+		
+	//MENU SETUP
+	
+	} else if game_mode == "menu_setup" {
+		
+		if !audio_is_playing(snd_music_main) {
+			audio_play_sound(snd_music_main, 80, true);	
+		}
+		
+		dungeon_door = temp_door_choice;
+		if menu_timer > 0 {
+			menu_timer--
+			if menu_timer == 0 {
+				game_mode = "menu";
+			}
+		}
+		
+	//MAIN MENU
+	
+	} else if game_mode == "menu" {
+		
+		if !audio_is_playing(snd_music_main) {
+			audio_play_sound(snd_music_main, 80, true);	
+		}
+		
+		switch (menu_mode) {
+			case "main":
+				menu_mode = "walk";
+			break;
+			
+			case "walk":
+				menu_text = "EXPLORE";
+				if key_left() {
+					menu_mode = "options"
+				} else if key_right() {
+					menu_mode = "status";
+				} else if key_accept() {
+					scr_snd_confirm();
+					walk_timer = 300;
+					game_mode = "walking";
+				}
+			break;
+		
+			case "status":
+				menu_text = "STATUS";
+				if key_left() {
+					menu_mode = "walk"
+				} else if key_right() {
+					menu_mode = "inventory";
+				} else if  key_accept() {
+					scr_snd_confirm();
+					game_mode = "status";
+				}
+			break;
+		
+			case "inventory":
+				menu_text = "INVENTORY";
+				if key_left() {
+					menu_mode = "status"
+				} else if key_right() {
+					menu_mode = "armory";
+				}  else if  key_accept() {
+					scr_snd_confirm();
+					game_mode = "inventory";
+				}
+			break;
+		
+			case "armory":
+				menu_text = "EQUIPMENT";
+				if key_left() {
+					menu_mode = "inventory"
+				} else if key_right() {
+					menu_mode = "options";
+				} else if  key_accept() {
+					scr_snd_confirm();
+					game_mode = "armory";
+				}
+			break;
+		
+			case "options":
+				menu_text = "OPTIONS";
+				if key_left() {
+					menu_mode = "armory"
+				} else if key_right() {
+					menu_mode = "walk";
+				} else if  key_accept() {
+					scr_snd_confirm();
+					game_mode = "options";
+				}
+			break;
+		}
+		
+	//STATUS SCREEN
+	} else if game_mode == "status" {
+		switch (selected_status_char) {
+			case char1:
+				if key_left() {
+					if array_contains(char_targets, char4) {
+						selected_status_char = char4;
+					} else if array_contains(char_targets, char3) {
+						selected_status_char = char3;
+					} else if array_contains(char_targets, char2) {
+						selected_status_char = char2;
+					}
+					
+				} else if key_right() {
+					if array_contains(char_targets, char2) {
+						selected_status_char = char2;
+					}
+				}
+			break;
+		
+			case char2:
+				if key_left() {
+					selected_status_char = char1;
+				} else if key_right() {
+					if array_contains(char_targets, char3) {
+						selected_status_char = char3;
+					} else {
+						selected_status_char = char1;
+					}
+				}
+			break;
+		
+			case char3:
+				if key_left() {
+					selected_status_char = char2;
+				} else if key_right() {
+					if array_contains(char_targets, char3) {
+						selected_status_char = char4;
+					} else {
+						selected_status_char = char1;
+					}
+				}
+			break;
+		
+			case char4:
+				if key_left() {
+					selected_status_char = char3;
+				} else if key_right() {
+					selected_status_char = char1;
+				}
+			break;
+		}
+		if key_accept() || key_cancel() {
+			scr_snd_cancel();
+			game_mode = "menu"
+			selected_status_char = char1;
+		}
+	
+	//INVENTORY SCREEN
+	
+	} else if game_mode == "inventory" {
+		if !inv_targeting {
+			if key_left() {
+				if inv_cursor_pos == 0 {
+					inv_cursor_pos = 6	
+				} else {
+					inv_cursor_pos--			
+				}
+			} else if key_right() {
+				if inv_cursor_pos == 6 {
+					inv_cursor_pos = 0	
+				} else {
+					inv_cursor_pos++			
+				}
+			} else if key_accept() {
+				scr_snd_confirm();
+				if inventory[inv_cursor_pos] != empty_item {
+					if inventory[inv_cursor_pos].type == "party_item" {
+						script_execute(inventory[inv_cursor_pos].use_script, char_targets[inv_target_pos], char_targets[inv_target_pos])
+						inventory[inv_cursor_pos] = empty_item
+					} else if inventory[inv_cursor_pos].type == "item" {
+						inv_targeting = true;
+					} else if inventory[inv_cursor_pos].type == "revive" {
+						inv_targeting = true;
+					}
+				}
+			} else if key_cancel() {
+				scr_snd_cancel();
+				game_mode = "menu"
+			}
+		} else {
+			if key_left() {
+				if (array_length(char_targets)) > 1 {
+					if inv_target_pos == 0 {
+						inv_target_pos = (array_length(char_targets) - 1)
+					} else {
+						inv_target_pos--
+					}
+				}
+			} else if key_right() {
+				if (array_length(char_targets)) > 1 {
+					if inv_target_pos == (array_length(char_targets) - 1) {
+						inv_target_pos = 0
+					} else {
+						inv_target_pos++
+					}
+				}
+			} else if key_accept() {
+				if inventory[inv_cursor_pos].type == "item" && char_targets[inv_target_pos]. hp > 0 {
+					scr_snd_confirm();
+					script_execute(inventory[inv_cursor_pos].use_script, char_targets[inv_target_pos], char_targets[inv_target_pos])
+					inventory[inv_cursor_pos] = empty_item
+					inv_targeting = false;
+				} else if inventory[inv_cursor_pos].type == "revive" && char_targets[inv_target_pos]. hp <= 0 {
+					scr_snd_confirm();
+					script_execute(inventory[inv_cursor_pos].use_script, char_targets[inv_target_pos], char_targets[inv_target_pos])
+					inventory[inv_cursor_pos] = empty_item
+					inv_targeting = false;
+				} else {
+					scr_snd_cancel();
+				}
+				
+			} else if key_cancel() {
+				scr_snd_cancel();
+				inv_targeting = false;
+			}
+		}
+		
+	//EQUIPMENT SCREEN
+	
+	} else if game_mode == "armory" {
+		if key_cancel() {
+			scr_snd_cancel();
+			game_mode = "menu"
+		}
+	
+	//MAIN OPTIONS MENU
+	
+	} else if game_mode == "options" {
+		if key_cancel() {
+			scr_snd_cancel();
+			game_mode = "menu"
+		}
+		switch options_cursor {
+			case "audio": 
+				if key_up() {
+					options_cursor = "exit";
+				} else if key_down() {
+					options_cursor = "video";
+				}
+			break;
+			
+			case "video": 
+				if key_up() {
+					options_cursor = "audio";
+				} else if key_down() {
+					options_cursor = "exit";
+				}
+			break;
+			
+			case "exit": 
+				if key_up() {
+					options_cursor = "video";
+				} else if key_down() {
+					options_cursor = "audio";
+				} else if key_accept() {
+					scr_snd_confirm();
+					game_end()
+				}
+			break;
+		}
+		
+	//WALKING
+	
+	} else if game_mode == "walking" {
+		
+		if !audio_is_playing(snd_music_main) {
+			audio_play_sound(snd_music_main, 80, true);	
+		}
+		
+		walking = true;	
+		demo_item_pot = (dungeon_floor * dungeon_floor) + dungeon_floor;
+		if walk_timer > 0 {
+			walk_timer--;
+			if walk_timer == 0 {
+				door_reset = false;
+				scr_roll_prizes();
+				game_mode = "doors";
+			}
+		}
+		
+	//DOORS
+	
+	} else if game_mode == "doors" {
+		
+		if !audio_is_playing(snd_music_main) {
+			audio_play_sound(snd_music_main, 80, true);	
+		}
+		
+		walking = false;
+		if !door_reset {
+			door_cursor_pos = 1;
+			door_reset = true;
+		}
+		if dungeon_room == 0 || dungeon_room == 7 || dungeon_room == 8 {
+			if key_accept() {
+				scr_snd_confirm();
+				temp_door_choice = door_cursor_pos;
+				temp_prize = obj_door_prize_1_1.prize;
+				if dungeon_room == 8 {
+					game_mode = "boss_setup";
+				} else {
+					if floor(random(10)) < 4 {
+						game_mode = "event_setup";	
+					} else {
+						game_mode = "battle_setup";	
+					}
+				}
+				if audio_is_playing(snd_music_main) {
+					audio_stop_sound(snd_music_main);	
+				}
+			}
+		} else if dungeon_room == 1 || dungeon_room == 3 || dungeon_room == 5 || dungeon_room == 6 {
+			if key_left() {
+				if door_cursor_pos == 1 {
+					door_cursor_pos = 2;
+				} else if door_cursor_pos == 2 {
+					door_cursor_pos = 1	
+				}
+			} else if key_right() {
+				if door_cursor_pos == 1 {
+					door_cursor_pos = 2;
+				} else if door_cursor_pos == 2 {
+					door_cursor_pos = 1	
+				}
+			} else if key_accept() {
+				scr_snd_confirm();
+				temp_door_choice = door_cursor_pos;
+				if door_cursor_pos == 1 {
+					temp_prize = obj_door_prize_2_1.prize;
+				} else if door_cursor_pos == 2 {
+					temp_prize = obj_door_prize_2_2.prize;
+				}
+				if dungeon_room == 8 {
+					game_mode = "boss_setup";
+				} else {
+					if floor(random(10)) < 4 {
+						game_mode = "event_setup";	
+					} else {
+						game_mode = "battle_setup";	
+					}
+				}
+				if audio_is_playing(snd_music_main) {
+					audio_stop_sound(snd_music_main);	
+				}
+			}
+		} else if dungeon_room == 2 || dungeon_room == 4 {
+			if key_left() {
+				if door_cursor_pos == 1 {
+					door_cursor_pos = 3;
+				} else {
+					door_cursor_pos--	
+				}
+			} else if key_right() {
+				if door_cursor_pos == 3 {
+					door_cursor_pos = 1;
+				} else {
+					door_cursor_pos++
+				}
+			} else if key_accept() {
+				scr_snd_confirm();
+				temp_door_choice = door_cursor_pos;
+				if door_cursor_pos == 1 {
+					temp_prize = obj_door_prize_3_1.prize;
+				} else if door_cursor_pos == 2 {
+					temp_prize = obj_door_prize_1_1.prize;
+				} else if door_cursor_pos == 3 {
+					temp_prize = obj_door_prize_3_3.prize;
+				}
+				if dungeon_room == 8 {
+					game_mode = "boss_setup";
+				} else {
+					if floor(random(10)) < 4 {
+						game_mode = "event_setup";	
+					} else {
+						game_mode = "battle_setup";	
+					}
+				}
+				if audio_is_playing(snd_music_main) {
+					audio_stop_sound(snd_music_main);	
+				}
+			}
+		}
+		
+	//EVENT SETUP
+	
+	} else if game_mode == "event_setup" {	
+		
+		if !audio_is_playing(snd_music_menu) {
+			audio_play_sound(snd_music_menu, 80, true);	
+		}
+		
+		//Set event
+		if !event_set {
+			event_set = true;
+			event.event_event = event_list[floor(random(array_length(event_list)))]
+			event.name = event.event_event.name;
+			event.text_line = 0
+			event.use_script = event.event_event.use_script;
+			obj_event.sprite_index = event.event_event.sprite;
+			monster.gold = event.event_event.gold;
+			monster.item = event.event_event.item; 
+			bottom_text = event.event_event.text[event.text_line]
+		} else if event_set {
+			game_mode = "event"	
+		}
+		
+	//EVENT
+		
+	} else if game_mode == "event" {
+		if event_mode = "start" {
+			text_mode = "bottom_text";
+			if key_accept() {
+				scr_snd_confirm();
+				if event.text_line < (array_length(event.event_event.text) - 1) {
+					event.text_line++
+					bottom_text = event.event_event.text[event.text_line]
+				} else {
+					key_pressed = true;
+					event_mode = "script";
+				}
+			}
+			
+		} else if event_mode = "script" {
+			
+			script_execute(event.use_script)
+			if text_mode == "choice" {
+				if key_up() || key_down() {
+					if choice_cursor_pos == 1 {
+						choice_cursor_pos = 2	
+					} else if choice_cursor_pos == 2 {
+						choice_cursor_pos = 1	
+					}
+				}
+			}
+			
+		} else if event_mode = "end" {
+			scr_end_event();
+		}
+		
+	//BATTLE SETUP
+		
+	} else if game_mode == "battle_setup" {
+		
+		if !audio_is_playing(snd_music_boss) {
+			audio_play_sound(snd_music_boss, 80, true);	
+		}
+		
+		//Set monster
+		if !monster_set {
+			monster_set = true;
+			monster.monster_type = monster_list[dungeon_floor - 1][floor(random(array_length(monster_list[dungeon_floor - 1])))]
+			monster.name = monster.monster_type.name;
+			monster.hp = monster.monster_type.hp;
+			monster.hp_max = monster.monster_type.hp_max;
+			monster.str = monster.monster_type.str;
+			monster.def = monster.monster_type.def;
+			monster.spd = monster.monster_type.spd;
+			monster.eva = monster.monster_type.eva;
+			monster.int = monster.monster_type.int;
+			monster.wis = monster.monster_type.wis;
+			monster.init = monster.monster_type.init;
+			monster.actions = monster.monster_type.actions;
+			monster.temp_stat_buffs = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
+			monster.status_effects = [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]]
+			monster.gold = monster.monster_type.gold;
+			monster.item = monster.monster_type.item;
+			obj_monster.sprite_index = monster.monster_type.sprite;
+		
+		//Set turn order
+		} else if (monster_set && !turn_order_set) || (monster_set && array_length(turn_order) <= 0){
+			if !init_test_set {
+				char1.init_test = char1.init;
+				if array_contains(char_targets, char2) {
+					char2.init_test = char2.init;
+				}
+				if array_contains(char_targets, char3) {
+					char3.init_test = char3.init;
+				}
+				if array_contains(char_targets, char4) {
+					char4.init_test = char4.init;
+				}
+				monster.init_test = monster.init;
+				init_test_set = true;
+			}
+		
+			char1.init_test--
+			if char1.init_test == 0 {
+				array_push(turn_order, 1);
+				array_push(turn_order, 6);
+			}
+		
+			if array_contains(char_targets, char2) {
+				char2.init_test--
+				if char2.init_test == 0 {
+					array_push(turn_order, 2);
+					array_push(turn_order, 6);
+				}
+			}
+			
+			if array_contains(char_targets, char3) {
+				char3.init_test--
+				if char3.init_test == 0 {
+					array_push(turn_order, 3);
+					array_push(turn_order, 6);
+				}	
+			}
+			
+			if array_contains(char_targets, char4) {
+				char4.init_test--
+				if char4.init_test == 0 {
+					array_push(turn_order, 4);
+					array_push(turn_order, 6);
+				}	
+			}
+		
+			monster.init_test--
+			if char1.init_test == 0 {
+				array_push(turn_order, 5);
+				array_push(turn_order, 6);
+			}
+			
+			if array_length(turn_order) == ((array_length(char_targets) + 1) * 2) {
+				turn_order_set = true;
+			}
+		
+		} else if turn_order_set {
+			if obj_battle_box.y == 672 {
+				game_mode = "battle"
+				key_pressed = false;
+			}
+		}
+		
+	//BOSS SETUP
+		
+	} else if game_mode == "boss_setup" {
+		
+		if !audio_is_playing(snd_music_boss) {
+			audio_play_sound(snd_music_boss, 80, true);	
+		}
+		
+		//Set monster
+		if !add_char_text {
+			top_text = "I'll help you!";
+			text_mode = "top_text";
+			if key_accept() {
+				text_mode = "none";	
+				add_char_text = true;
+			}
+		} else if add_char_text && !add_char {
+			if dungeon_floor == 1 {
+				scr_char_setup(char2, char2_to_be);
+				obj_char2.char2 = char2_to_be.sprites;
+				array_push(char_targets, char2);
+				add_char = true;
+			} else if dungeon_floor == 2 {
+				scr_char_setup(char3, char3_to_be);
+				obj_char3.char3 = char3_to_be.sprites;
+				array_push(char_targets, char3);
+				add_char = true;
+			} else if dungeon_floor == 3 {
+				scr_char_setup(char4, char4_to_be);
+				obj_char4.char4 = char4_to_be.sprites;
+				array_push(char_targets, char4);
+				add_char = true;
+			}
+		}
+
+		if add_char && !monster_set {
+			monster_set = true;
+			monster.monster_type = boss_list[dungeon_floor - 1][floor(random(array_length(boss_list[dungeon_floor - 1])))]
+			monster.name = monster.monster_type.name;
+			monster.hp = monster.monster_type.hp;
+			monster.hp_max = monster.monster_type.hp_max;
+			monster.str = monster.monster_type.str;
+			monster.def = monster.monster_type.def;
+			monster.spd = monster.monster_type.spd;
+			monster.eva = monster.monster_type.eva;
+			monster.int = monster.monster_type.int;
+			monster.wis = monster.monster_type.wis;
+			monster.init = monster.monster_type.init;
+			monster.actions = monster.monster_type.actions;
+			monster.temp_stat_buffs = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
+			monster.status_effects = [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]]
+			monster.gold = monster.monster_type.gold;
+			monster.item = monster.monster_type.item;
+			obj_monster.sprite_index = monster.monster_type.sprite;
+		
+		//Set turn order
+		} else if (monster_set && !turn_order_set) || (monster_set && array_length(turn_order) <= 0){
+			if !init_test_set {
+				char1.init_test = char1.init;
+				if array_contains(char_targets, char2) {
+					char2.init_test = char2.init;
+				}
+				if array_contains(char_targets, char3) {
+					char3.init_test = char3.init;
+				}
+				if array_contains(char_targets, char4) {
+					char4.init_test = char4.init;
+				}
+				monster.init_test = monster.init;
+				init_test_set = true;
+			}
+		
+			char1.init_test--
+			if char1.init_test == 0 {
+				array_push(turn_order, 1);
+				array_push(turn_order, 6);
+			}
+		
+			if array_contains(char_targets, char2) {
+				char2.init_test--
+				if char2.init_test == 0 {
+					array_push(turn_order, 2);
+					array_push(turn_order, 6);
+				}
+			}
+			
+			
+			if array_contains(char_targets, char3) {
+				char3.init_test--
+				if char3.init_test == 0 {
+					array_push(turn_order, 3);
+					array_push(turn_order, 6);
+				}	
+			}
+			
+		
+			if array_contains(char_targets, char4) {
+				char4.init_test--
+				if char4.init_test == 0 {
+					array_push(turn_order, 4);
+					array_push(turn_order, 6);
+				}	
+			}
+		
+			monster.init_test--
+			if char1.init_test == 0 {
+				array_push(turn_order, 5);
+				array_push(turn_order, 6);
+			}
+			
+			if array_length(turn_order) == ((array_length(char_targets) + 1) * 2) {
+				turn_order_set = true;
+			}
+		
+		} else if turn_order_set {
+			if obj_battle_box.y == 672 {
+				game_mode = "battle"
+				top_text = "";
+				add_char_text = false;
+				add_char = false;
+				key_pressed = false;
+			}
+		}
+		
+	//BATTLE
+		
+	} else if game_mode == "battle" {
+	
+		/*
+		array_push(turn_order, real(turn_order[0]));
+		array_shift(turn_order);
+		*/
+		//Next turn 
+		
+		//?? vvvvvvvvvvv
+		if battle_menu_mode == "none" {
+			if text_mode != "none" {
+				if key_accept() {
+					key_pressed = true;
+					text_mode = "none";	
+				}
+			}
+			
+			if turn_order[0] == 1 {
+				turn = char1;
+			} else if turn_order[0] == 2 {
+				turn = char2;
+			} else if turn_order[0] == 3 {
+				turn = char3;
+			} else if turn_order[0] == 4 {
+				turn = char4;
+			} else if turn_order[0] == 5 {
+				turn = monster;
+			} else if turn_order[0] == 6 {
+				turn = "between";
+			}   
+	
+			if turn == char1 {
+				if char1.hp > 0 {
+					switch (battle_button) {
+					case "atk":
+						if key_right() {
+							battle_button = "skl"
+						} else if key_down() {
+							battle_button = "bag"
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							scr_attack(char1, monster);
+							scr_battle_end_turn(turn);
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+			
+					case "skl":
+						if key_left() {
+							battle_button = "atk"
+						} else if key_down() {
+							battle_button = "esc"
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							battle_menu_mode = "actions";
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+			
+					case "bag":
+						if key_right() {
+							battle_button = "esc"
+						} else if key_up() {
+							battle_button = "atk"
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							battle_menu_mode = "inventory";
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+			
+					case "esc":
+						if key_left() {
+							battle_button = "bag"
+						} else if key_up() {
+							battle_button = "skl"
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							scr_battle_escape();
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+					}
+				} else {
+					scr_battle_end_turn(turn);	
+				}
+			
+			} else if turn == char2 {
+				if char2.hp > 0 {
+					switch (battle_button) {
+					case "atk":
+						if key_right() {
+							battle_button = "skl"
+						} else if key_down() {
+							battle_button = "bag"
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							scr_attack(char2, monster);
+							scr_battle_end_turn(turn);
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+			
+					case "skl":
+						if key_left() {
+							battle_button = "atk"
+						} else if key_down() {
+							battle_button = "esc"
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							battle_menu_mode = "actions";
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+			
+					case "bag":
+						if key_right() {
+							battle_button = "esc"
+						} else if key_up() {
+							battle_button = "atk"
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							battle_menu_mode = "inventory";
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+			
+					case "esc":
+						if key_left() {
+							battle_button = "bag"
+						} else if key_up() {
+							battle_button = "skl"
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							scr_battle_escape();
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+					}
+				} else {
+					scr_battle_end_turn(turn);	
+				}
+				
+			} else if turn == char3 {
+				if char3.hp {
+					switch (battle_button) {
+					case "atk":
+						if key_right() {
+							battle_button = "skl"
+						} else if key_down() {
+							battle_button = "bag"
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							scr_attack(char3, monster);
+							scr_battle_end_turn(turn);
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+				
+					case "skl":
+						if key_left() {
+							battle_button = "atk"
+						} else if key_down() {
+							battle_button = "esc"
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							battle_menu_mode = "actions";
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+			
+					case "bag":
+						if key_right() {
+							battle_button = "esc"
+						} else if key_up() {
+							battle_button = "atk"
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							battle_menu_mode = "inventory";
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+			
+					case "esc":
+						if key_left() {
+							battle_button = "bag"
+						} else if key_up() {
+							battle_button = "skl"
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							scr_battle_escape();
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+					}
+				} else {
+					scr_battle_end_turn(turn);	
+				}
+				
+			} else if turn == char4 {
+				if char4.hp {
+					switch (battle_button) {
+					case "atk":
+						if key_right() {
+							battle_button = "skl";
+						} else if key_down() {
+							battle_button = "bag";
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							scr_attack(char4, monster);
+							scr_battle_end_turn(turn);
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+			
+					case "skl":
+						if key_left() {
+							battle_button = "atk";
+						} else if key_down() {
+							battle_button = "esc";
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							battle_menu_mode = "actions";
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+			
+					case "bag":
+						if key_right() {
+							battle_button = "esc";
+						} else if key_up() {
+							battle_button = "atk";
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							battle_menu_mode = "inventory";
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+			
+					case "esc":
+						if key_left() {
+							battle_button = "bag";
+						} else if key_up() {
+							battle_button = "skl";
+						} else if key_accept() && !key_pressed {
+							scr_snd_confirm();
+							key_pressed = true;
+							scr_battle_escape();
+						} else if !key_accept() && key_pressed {
+							key_pressed = false;
+						}
+					break;
+					}
+				} else {
+					scr_battle_end_turn(turn);	
+				}
+				
+			} else if turn == monster {
+				char_target_index = floor(random(array_length(char_targets)));
+				temp_actor = monster;
+				temp_target = char_targets[char_target_index];
+				temp_action = monster.actions[floor(random(array_length(monster.actions)))];
+				script_execute(temp_action, temp_actor, temp_target)
+				scr_battle_end_turn(turn);
+				
+			} else if turn == "between" {
+				if between_turn_timer > 0 {
+					between_turn_timer--	
+				} else if between_turn_timer = 0 {
+					array_push(obj_init.turn_order, real(obj_init.turn_order[0]));
+					array_shift(obj_init.turn_order);	
+				}
+			}	
+	
+			if monster.hp <= 0 {
+				victory_text = "VICTORY!";
+				game_mode = "victory";
+			}
+			
+			if char1.hp <= 0 {
+				game_room = "game_over";
+				room_goto(rm_game_over)	
+			}
+			
+		} else if battle_menu_mode == "actions" {
+			
+			if key_up() {
+				if battle_box_actions_cursor == 0 {
+					battle_box_actions_cursor = 2;
+				} else {
+					battle_box_actions_cursor--;
+				}
+			} else if key_down() {
+				if battle_box_actions_cursor == 2 {
+					battle_box_actions_cursor = 0;
+				} else {
+					battle_box_actions_cursor++;
+				}
+			} else if key_accept() {
+				if turn.actions[battle_box_actions_cursor].use_script == empty_action {
+					scr_snd_cancel();
+				} else {
+					if turn.ap >= turn.actions[battle_box_actions_cursor].cost {
+						scr_snd_confirm();
+						turn.ap -= turn.actions[battle_box_actions_cursor].cost;
+						temp_actor = turn;
+						temp_target = monster;
+						temp_action = turn.actions[battle_box_actions_cursor].use_script;
+						script_execute(temp_action, temp_actor, temp_target)
+						if battle_menu_mode = "actions" {
+							scr_battle_end_action(turn)
+						}
+					} else {
+						scr_snd_cancel();
+					}
+				}
+			} else if key_cancel() {
+				scr_snd_cancel();
+				battle_menu_mode = "none";	
+			}
+		} else if battle_menu_mode == "inventory" {
+			if !inv_targeting {
+				if key_left() {
+					if inv_cursor_pos == 0 {
+						inv_cursor_pos = 6	
+					} else {
+						inv_cursor_pos--			
+					}
+				} else if key_right() {
+					if inv_cursor_pos == 6 {
+						inv_cursor_pos = 0	
+					} else {
+						inv_cursor_pos++			
+					}
+				} else if key_accept() {
+					
+					if inventory[inv_cursor_pos].type == "party_item" {
+						script_execute(inventory[inv_cursor_pos].use_script, char_targets[inv_target_pos], char_targets[inv_target_pos])
+						inventory[inv_cursor_pos] = empty_item
+						battle_menu_mode = "none"
+						scr_battle_end_turn(turn);
+						inv_cursor_pos = 0;
+					} else if inventory[inv_cursor_pos].type == "item" && char_targets[inv_target_pos].hp > 0 {
+						scr_snd_confirm();
+						inv_targeting = true;
+					} else if inventory[inv_cursor_pos].type == "revive" && char_targets[inv_target_pos].hp <= 0 {
+						scr_snd_confirm();
+						inv_targeting = true;
+					} else {
+						scr_snd_cancel();
+					}
+					
+				} else if key_cancel() {
+					scr_snd_cancel();
+					battle_menu_mode = "none";
+				}
+			} else {
+				if key_left() {
+					if (array_length(char_targets)) > 1 {
+						if inv_target_pos == 0 {
+							inv_target_pos = (array_length(char_targets) - 1)
+						} else {
+							inv_target_pos--
+						}
+					}
+				} else if key_right() {
+					if (array_length(char_targets)) > 1 {
+						if inv_target_pos == (array_length(char_targets) - 1) {
+							inv_target_pos = 0
+						} else {
+							inv_target_pos++
+						}
+					}
+				} else if key_accept() {
+					scr_snd_confirm();
+					script_execute(inventory[inv_cursor_pos].use_script, char_targets[inv_target_pos], char_targets[inv_target_pos])
+					inventory[inv_cursor_pos] = empty_item
+					inv_targeting = false;
+					battle_menu_mode = "none";
+					scr_battle_end_turn(turn);
+					inv_cursor_pos = 0;
+				} else if key_cancel() {
+					scr_snd_cancel();
+					inv_targeting = false;
+				}
+			}
+		} else if battle_menu_mode == "text" {
+			bottom_text = battle_text_buffer[0];
+			text_mode = "bottom_text";
+			if key_accept() {
+				if array_length(battle_text_buffer) > 1 {
+					array_shift(battle_text_buffer);
+				} else if array_length(battle_text_buffer) = 1 {
+					array_shift(battle_text_buffer);
+					text_mode = "none";
+					battle_menu_mode = battle_mode_saved;
+					battle_mode_saved = "";
+					script_execute(battle_text_followup_script, temp_actor, temp_target)
+				}
+			}
+		}
+		
+	//ESCAPE
+		
+	} else if game_mode == "escape" {
+		
+		if audio_is_playing(snd_music_boss) {
+			audio_stop_sound(snd_music_boss);	
+		}
+		
+		if key_accept(){
+			scr_snd_confirm();
+			init_test_set = false;
+			turn = monster;
+			turn_order = [];
+			char1.temp_stat_buffs = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
+			char2.temp_stat_buffs = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
+			char3.temp_stat_buffs = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
+			char4.temp_stat_buffs = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
+			char1.status_effects = [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]];
+			char2.status_effects = [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]];
+			char3.status_effects = [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]];
+			char4.status_effects = [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]];
+			char_set = false;
+			turn_order_set = false;
+			monster_set = false;
+			array_push(visited_rooms, (string(dungeon_room) + string(dungeon_door)));
+			scr_next_room();
+			menu_timer = 30;
+			game_mode = "menu_setup";
+		}
+
+	//VICTORY
+
+	} else if game_mode == "victory" {
+		
+		if audio_is_playing(snd_music_menu) {
+			audio_stop_sound(snd_music_menu);	
+		}
+		
+		if audio_is_playing(snd_music_boss) {
+			audio_stop_sound(snd_music_boss);	
+		}
+		
+		if victory_mode == "prize" {
+			if !prize_given {
+				if temp_prize == "gold" {
+					if monster.gold > 0 {
+						top_text = "You find " + string(monster.gold) + " gold!";
+						text_mode = "top_text";
+						if key_accept() {
+							scr_snd_confirm();
+							scr_add_gold(monster.gold);
+							text_mode = "none";
+							prize_given = true;
+						}
+					} else {
+						prize_given = true;
+					}
+					
+				} else if temp_prize == "heal" {
+					top_text = "You are healed for 25% of max HP!";
+					text_mode = "top_text";
+					if key_accept() {
+						scr_snd_confirm();
+						scr_base_heal(char1, floor(char1.hp_max/4), 0);
+						scr_base_heal(char2, floor(char2.hp_max/4), 0);
+						scr_base_heal(char3, floor(char3.hp_max/4), 0);
+						scr_base_heal(char4, floor(char4.hp_max/4), 0);
+						text_mode = "none";
+						prize_given = true
+					}
+				} else if temp_prize == "item" {
+					if monster.item != empty_item {
+						if string_char_at(monster.item.name, 0) == "A" || string_char_at(monster.item.name, 0) == "E" || string_char_at(monster.item.name, 0) == "I" || string_char_at(monster.item.name, 0) == "O" || string_char_at(monster.item.name, 0) == "U" {
+							top_text = "You find an " + monster.item.name;
+						} else {
+							top_text = "You find a " + monster.item.name;
+						}
+						text_mode = "top_text";
+						if key_accept() {
+							scr_snd_confirm();
+							text_mode = "none";
+							if array_contains(inventory, empty_item) {
+								inventory[scr_find_empty_inv_slot()] = monster.item
+								prize_given = true;
+							} else {
+								inv_cursor_pos = 0;
+								victory_mode = "item_overwrite";
+								victory_text = "CONFIRM TO REPLACE, CANCEL TO DROP";
+							}
+						}
+					} else {
+						prize_given = true;
+					}
+				}
+			} else if prize_given {
+				victory_mode = "reset";
+			}
+			
+		} else if victory_mode = "item_overwrite" {
+			if !prize_given {
+				if inv_cursor_pos != -1 {
+					if key_left() {
+						if inv_cursor_pos == 0 {
+							inv_cursor_pos = 6	
+						} else {
+							inv_cursor_pos--			
+						}
+					} else if key_right() {
+						if inv_cursor_pos == 6 {
+							inv_cursor_pos = 0	
+						} else {
+							inv_cursor_pos++			
+						}
+					} else if key_down() {
+						inv_cursor_temp = inv_cursor_pos;
+						inv_cursor_pos = -1;
+						victory_text = "HELD ITEM"
+					} else if key_accept() {
+						scr_snd_confirm();
+						prize_given = true;
+						inventory[inv_cursor_pos] = monster.item;
+					} else if key_cancel() {
+						scr_snd_cancel();
+						prize_given = true;
+					}	
+				} else if inv_cursor_pos == -1 {
+					if key_up() {
+						inv_cursor_pos = inv_cursor_temp;
+						victory_text = "CONFIRM TO REPLACE, CANCEL TO DROP";
+					}
+				}
+				
+			} else if prize_given {
+				victory_text = "VICTORY!"
+				victory_mode = "reset";
+			}
+				
+		} else if victory_mode = "reset" {
+			if key_accept(){
+				scr_snd_confirm();
+				array_push(visited_rooms, (string(dungeon_room) + string(dungeon_door)));
+				init_test_set = false;
+				turn = monster;
+				turn_order = [];
+				char1.temp_stat_buffs = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
+				char2.temp_stat_buffs = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
+				char3.temp_stat_buffs = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
+				char4.temp_stat_buffs = [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]];
+				char1.status_effects = [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]];
+				char2.status_effects = [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]];
+				char3.status_effects = [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]];
+				char4.status_effects = [0, 0, 0, 0, 0, [0, 0], [0, 0], [0, 0]];
+				char_set = false;
+				turn_order_set = false;
+				monster_set = false;
+				prize_given = false;
+				victory_mode = "prize";
+				scr_next_room();
+				menu_timer = 30;
+				game_mode = "menu_setup";
+			}
+		}
+	}
+
+//--END OF MODES--\\
+
+//----GAME OVER----\\
+
+} else if game_room == "game_over" {
+	
+	audio_stop_all();	
+	
+	if key_up() || key_down() {
+		if game_over_cursor_pos == "title" {
+			game_over_cursor_pos = "exit";
+		} else if game_over_cursor_pos == "exit" {
+			game_over_cursor_pos = "title";	
+		}
+	} else if key_accept() {
+		if game_over_cursor_pos == "title" {
+			scr_snd_confirm();
+			game_end()
+			//game_room = "title";
+			//room_goto(rm_title);
+			//reset
+			game_over_cursor_pos = "title";	
+		} else if game_over_cursor_pos == "exit" {
+			scr_snd_cancel();
+			game_end()
+		}
+		
+	}
+
+//----DEMO OVER----\\
+
+} else if game_room == "demo_over" {
+	
+	audio_stop_all();	
+	
+	if !end_room {
+		room_goto(rm_demo_over)
+		end_room = true
+	} else {
+		if key_cancel() {
+			game_end()
+		}
+	}
+}
+
